@@ -1,6 +1,6 @@
 from . import __version__ as app_version
 
-app_name = "xinyu_erpnext_china"
+app_name = "erpnext_china"
 app_title = "ERPNext China"
 app_publisher = "nolanzong"
 app_description = "ERPNext China"
