@@ -8,6 +8,7 @@ app_email = "zongnan1989@gmail.com"
 app_license = "MIT"
 
 after_install = "erpnext_china.setup.install.after_install"
+after_sync = "erpnext_china.setup.install.after_sync"
 
 setup_wizard_requires = "assets/erpnext_china/js/setup_wizard.js"
 

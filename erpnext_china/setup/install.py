@@ -63,6 +63,13 @@ def after_install():
     if not is_setup:
         set_china_default()
 
+# sync_for(name) — 同步 DocType（还没有 Desktop Icon 记录）
+# after_install - erpnext_china.setup.install.after_install: 但此时 tabDesktop Icon 里根本没有Desktop Icon 记录
+# after_app_install → auto_generate_icons_and_sidebar() → create_desktop_icons()
+# Desktop Icon 记录在此时才被插入（app 和 logo_url 为 NULL）
+# after_sync 在 after_app_install、sync_fixtures、sync_customizations、sync_dashboards 之后才执行
+# 能确保 Desktop Icon / Workspace Sidebar 已经存在
+def after_sync():
     set_v16_icon()
 
 def set_china_default():
