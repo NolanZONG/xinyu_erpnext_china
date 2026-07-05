@@ -1,6 +1,5 @@
 import frappe, csv, os, json
 from frappe import _
-    
 
 uom_list = [
     '个',
@@ -10,7 +9,7 @@ uom_list = [
     '批',
     '次',
     '件',
-	'张',
+    '张',
     '套',
     '卷',
     '片',
@@ -63,15 +62,22 @@ def after_install():
     # 业务逻辑：如果系统【没有】完成初始化，说明是首次安装系统，执行默认设置
     if not is_setup:
         set_china_default()
-        
+
+# sync_for(name) — 同步 DocType（还没有 Desktop Icon 记录）
+# after_install - erpnext_china.setup.install.after_install: 但此时 tabDesktop Icon 里根本没有Desktop Icon 记录
+# after_app_install → auto_generate_icons_and_sidebar() → create_desktop_icons()
+# Desktop Icon 记录在此时才被插入（app 和 logo_url 为 NULL）
+# after_sync 在 after_app_install、sync_fixtures、sync_customizations、sync_dashboards 之后才执行
+# 能确保 Desktop Icon / Workspace Sidebar 已经存在
+def after_sync():
     set_v16_icon()
 
-def set_china_default():    
+def set_china_default():
     try:
         existing_uom_list = frappe.get_all('UOM', pluck ='name')
         existing_uom_set = {uom for uom in existing_uom_list}
         new_uom_list = [uom for uom in uom_list if uom not in existing_uom_set]
-        for uom in new_uom_list:            
+        for uom in new_uom_list:
             frappe.get_doc({
                 'doctype': 'UOM',
                 'uom_name': uom,
@@ -80,17 +86,17 @@ def set_china_default():
         frappe.db.set_value('Language',{'name': 'zh'}, 'enabled', 1)
         set_global_defaults()
         set_system_settings()
-        change_field_property()        
-    except:
+        change_field_property()
+    except Exception as _:
         frappe.log_error("erpnext_china set_china_default failed")
 
 def set_global_defaults():
-        frappe.db.set_single_value('Global Defaults',
-            {
-				'disable_rounded_total':1,
-				'disable_in_words':1
-            }
-        )
+    frappe.db.set_single_value('Global Defaults',
+        {
+            'disable_rounded_total': 1,
+            'disable_in_words': 1
+        }
+    )
 
 def set_system_settings():
     system_settings = frappe.get_doc('System Settings')
@@ -98,46 +104,50 @@ def set_system_settings():
     system_settings.country = 'China'
     system_settings.language = 'zh'
     system_settings.currency = 'CNY'
-    system_settings.time_zone = 'Asia/Chongqing' 
+    system_settings.time_zone = 'Asia/Shanghai'
     system_settings.rounding_method = 'Commercial Rounding'
     system_settings.allow_login_using_user_name = 1
     system_settings.allow_login_using_mobile_number = 1
     system_settings.currency_precision = 2
     system_settings.float_precision = 5
     system_settings.date_format = 'yyyy-mm-dd'
-    system_settings.save(ignore_permissions=True) 
+    system_settings.save(ignore_permissions=True)
 
 def change_field_property():
     try:
         file_path = os.path.join(os.path.dirname(__file__), 'field_property.csv')
         with open(file_path, 'r', encoding='utf-8') as in_file:
-                data = list(csv.reader(in_file))
+            data = list(csv.reader(in_file))
         for (doctype, field_name, prop, value) in data:
-                frappe.get_doc({
-                        'doctype': 'Property Setter',
-                        'doctype_or_field': 'DocField',
-                        'doc_type': doctype,
-                        'field_name': field_name,
-                        'property': prop,
-                        'value': value
-                }).insert(ignore_permissions=1, ignore_if_duplicate=1)
-    except:
+            frappe.get_doc({
+                'doctype': 'Property Setter',
+                'doctype_or_field': 'DocField',
+                'doc_type': doctype,
+                'field_name': field_name,
+                'property': prop,
+                'value': value
+            }).insert(ignore_permissions=1, ignore_if_duplicate=1)
+    except Exception as _:
         frappe.log_error("erpnext_china change_field_property failed")
 
 def set_v16_icon():
     """安装后更新桌面图标和工作流侧边栏的图标配置"""
 
-    try:    
+    try:
         # 1. 更新 Desktop Icon：中国财务报表
         desktop_icon_name = "中国财务报表"
         if frappe.db.table_exists("Desktop Icon"):
             frappe.db.set_value(
                 "Desktop Icon",
                 desktop_icon_name,
-                "logo_url",
-                "/assets/erpnext_china/icons/account_report.svg"
+                {
+                    "app": "erpnext_china",
+                    "logo_url": "/assets/erpnext_china/icons/desktop_icons/solid/cn_account_report.svg",
+                },
             )
-        
+        else:
+            frappe.log_error("erpnext_china set_v16_icon failed: 'Desktop Icon' table does not exist.")
+
         # 2. 更新 Workflow Sidebar：中国财务报表
         workflow_sidebar_name = "中国财务报表"
         if frappe.db.table_exists("Workspace Sidebar"):
@@ -147,5 +157,7 @@ def set_v16_icon():
                 "header_icon",
                 "cn-account-reporting"
             )
-    except:
-        pass
+        else:
+            frappe.log_error("erpnext_china set_v16_icon failed: 'Workspace Sidebar' table does not exist.")
+    except Exception as e:
+        frappe.log_error(f"erpnext_china set_v16_icon failed: {str(e)}")

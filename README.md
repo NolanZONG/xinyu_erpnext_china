@@ -42,9 +42,15 @@
 没有设置默认站点的，`install-app` 时加`--site`参数
 
 ```
-bench get-app xinyu_erpnext_china https://github.com/NolanZONG/xinyu_erpnext_china.git
-bench install-app xinyu_erpnext_china
+bench get-app erpnext_china https://github.com/NolanZONG/erpnext_china.git
+bench install-app erpnext_china
 ```
+## 问题修复
+
+- 重新绘制了蓝底白字的中国会计科目表 logo，解决了logo 风格不统一的问题
+- 使用`after_sync`钩子，解决了中国会计科目表 logo 在 ERPNext v16 中无法正常显示的问题
+- 设置上海为默认时区
+- 修正了缩进错误
 
 ## 参考资料
 本 app 基于`yuzelin/erpnext_china`进行开发，针对最新版 ERPNext v16 进行了问题修复和兼容性适配，感谢原作者的贡献。
